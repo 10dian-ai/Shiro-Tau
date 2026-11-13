@@ -584,6 +584,8 @@ interface PackageJson {
 	piConfig?: {
 		name?: string;
 		configDir?: string;
+		/** The rebranded product's own version; `version` above stays the version of the Pi it is built on. */
+		version?: string;
 	};
 }
 
@@ -599,12 +601,22 @@ try {
 	if (err.code !== "ENOENT") throw e;
 }
 
-const piConfigName: string | undefined = pkg.piConfig?.name;
+/**
+ * Environment variable that makes a rebranded build use Pi's own name and config directory. Pi's
+ * test suite is written against those names; it sets this so it runs unchanged against this build.
+ */
+export const ENV_UPSTREAM_BRANDING = "PI_UPSTREAM_BRANDING";
+const branding = process.env[ENV_UPSTREAM_BRANDING] ? undefined : pkg.piConfig;
+const piConfigName: string | undefined = branding?.name;
 export const PACKAGE_NAME: string = pkg.name || "@earendil-works/pi-coding-agent";
 export const APP_NAME: string = piConfigName || "pi";
+/** True for a build released under another name. Pi's release feed says nothing about whether such a build is current. */
+export const IS_REBRANDED_BUILD: boolean = piConfigName !== undefined && piConfigName !== "pi";
 export const APP_TITLE: string = piConfigName ? APP_NAME : "π";
-export const CONFIG_DIR_NAME: string = pkg.piConfig?.configDir || ".pi";
+export const CONFIG_DIR_NAME: string = branding?.configDir || ".pi";
 export const VERSION: string = pkg.version || "0.0.0";
+/** What `--version` prints: the product's own version next to the Pi version it is built on, or just the Pi version. */
+export const VERSION_LABEL: string = branding?.version ? `${branding.version} (pi ${VERSION})` : VERSION;
 
 // e.g., PI_CODING_AGENT_DIR or TAU_CODING_AGENT_DIR
 export const ENV_AGENT_DIR = `${APP_NAME.toUpperCase()}_CODING_AGENT_DIR`;

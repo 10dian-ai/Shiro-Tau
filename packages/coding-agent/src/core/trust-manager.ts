@@ -3,6 +3,8 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import lockfile from "proper-lockfile";
 import { CONFIG_DIR_NAME } from "../config.ts";
+import { projectHookPaths } from "../shiro/hooks/config.ts";
+import { projectPolicyPaths } from "../shiro/policy/config.ts";
 import { canonicalizePath, pathsEqual, resolvePath } from "../utils/paths.ts";
 import { stripBom } from "../utils/text.ts";
 
@@ -185,8 +187,8 @@ function withTrustFileLock<T>(path: string, fn: () => T): T {
 
 /**
  * Returns true when cwd has project-local resources that must be gated by
- * project trust: trust-requiring entries under cwd/.pi, or .agents/skills in
- * cwd or one of its ancestors. Returns false when no such project resources
+ * project trust: trust-requiring entries under cwd/.pi, permission policy or
+ * hook files in cwd, or .agents/skills in cwd or one of its ancestors. Returns false when no such project resources
  * exist. The user/global ~/.agents/skills directory is always treated as a
  * trusted user resource and is ignored here, even when cwd is $HOME.
  */
@@ -197,6 +199,12 @@ export function hasTrustRequiringProjectResources(cwd: string): boolean {
 
 	const configDir = join(currentDir, CONFIG_DIR_NAME);
 	if (TRUST_REQUIRING_PROJECT_CONFIG_RESOURCES.some((entry) => existsSync(join(configDir, entry)))) {
+		return true;
+	}
+	// Permission rules and hooks a project brings along (its own, Claude Code's or Codex's) loosen
+	// what may run or execute commands, so a project holding any of them needs a trust decision too.
+	const policyAndHookPaths = [...projectPolicyPaths(CONFIG_DIR_NAME), ...projectHookPaths(CONFIG_DIR_NAME)];
+	if (policyAndHookPaths.some((entry) => existsSync(join(currentDir, entry)))) {
 		return true;
 	}
 

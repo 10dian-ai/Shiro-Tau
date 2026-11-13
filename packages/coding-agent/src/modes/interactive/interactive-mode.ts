@@ -64,6 +64,7 @@ import {
 	getAuthPath,
 	getDebugLogPath,
 	getDocsPath,
+	IS_REBRANDED_BUILD,
 	VERSION,
 } from "../../config.ts";
 import { type AgentSession, type AgentSessionEvent, parseSkillBlock } from "../../core/agent-session.ts";
@@ -1196,12 +1197,14 @@ export class InteractiveMode {
 				.finally(() => clearTimeout(timeout));
 		}
 
-		// Start version check asynchronously
-		checkForNewPiVersion(this.version).then((newRelease) => {
-			if (newRelease) {
-				this.showNewVersionNotification(newRelease);
-			}
-		});
+		// Start version check asynchronously. A rebranded build is not offered Pi's releases as updates.
+		if (!IS_REBRANDED_BUILD) {
+			checkForNewPiVersion(this.version).then((newRelease) => {
+				if (newRelease) {
+					this.showNewVersionNotification(newRelease);
+				}
+			});
+		}
 
 		// Start package update check asynchronously
 		this.checkForPackageUpdates()
