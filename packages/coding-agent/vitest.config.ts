@@ -9,7 +9,9 @@ export default mergeConfig(
 			environment: "node",
 			testTimeout: 30000,
 			// Tests run offline by default; opt in with allowNetwork() from test/test-network-env.ts.
-			env: { PI_OFFLINE: "1" },
+			// Pi's tests are written against Pi's own name and config directory, so they run with Pi's
+			// branding; test/shiro/branding.test.ts covers the names this build ships with.
+			env: { PI_OFFLINE: "1", PI_UPSTREAM_BRANDING: "1" },
 			unstubEnvs: true,
 			reporters: process.env.GITHUB_ACTIONS ? ["dot", "github-actions"] : ["dot"],
 			silent: "passed-only",
